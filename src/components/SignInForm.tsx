@@ -1,68 +1,121 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { IconBook2, IconMail, IconLock, IconEye, IconEyeOff, IconArrowRight, IconSchool } from "@tabler/icons-react";
+import { IconMail, IconLock, IconEye, IconEyeOff, IconArrowRight, IconSchool, IconUser, IconBackpack, IconCheck, IconRosetteDiscountCheck, IconVideo, IconTrendingUp } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
+import { ChoiceCard } from "./form";
+import { login, register, getProfile, homeFor } from "@/lib/auth";
+
+const perks = [
+  { icon: IconRosetteDiscountCheck, text: "Every tutor is verified and background-checked" },
+  { icon: IconVideo, text: "Try a 30-minute trial lesson before you commit" },
+  { icon: IconTrendingUp, text: "Track progress and notes after every lesson" },
+];
+
+function strength(pw: string) {
+  let s = 0;
+  if (pw.length >= 8) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/\d/.test(pw) || /[^A-Za-z0-9]/.test(pw)) s++;
+  return s;
+}
 
 export function SignInForm() {
   const [tab, setTab] = useState<"in" | "up">("in");
   const [show, setShow] = useState(false);
   const [role, setRole] = useState<"student" | "tutor">("student");
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
   const router = useRouter();
+  // Header links use /sign-in?mode=tutor. Read it once on the client so the page itself stays static.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "tutor") { setTab("up"); setRole("tutor"); }
+  }, []);
+  const sc = strength(pw);
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const email = String(new FormData(e.currentTarget).get("email"));
-    if (!email.includes("@")) return toast.error("Please enter a valid email address.");
-    // Mock auth: the real flow posts to auth_001 / auth_002 and stores the backend JWT.
-    document.cookie = `tw_role=${email.startsWith("admin") ? "admin" : role}; path=/`;
-    toast.success(tab === "in" ? "Signed in successfully." : "Account created successfully.");
-    router.push(email.startsWith("admin") ? "/admin" : role === "tutor" ? "/me/tutor" : "/me");
+    if (busy) return;
+    const f = new FormData(e.currentTarget);
+    const email = String(f.get("email")).trim();
+    setBusy(true);
+    try {
+      if (tab === "in") {
+        await login(email, pw);
+      } else {
+        await register({ email, password: pw, displayName: String(f.get("name")).trim(), currentMode: role });
+      }
+      const profile = await getProfile();
+      toast.success(tab === "in" ? "Signed in successfully." : "Account created successfully.");
+      router.push(homeFor(profile));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <div className="card w-full max-w-[460px] p-6 shadow-sm">
-      <div className="flex flex-col items-center text-center">
-        <span className="grid size-12 place-items-center rounded-full bg-primary-soft text-primary"><IconBook2 size={22} /></span>
-        <h1 className="pt-3 text-2xl font-semibold">{tab === "in" ? "Welcome back" : "Create your account"}</h1>
-        <p className="pb-5 text-muted">Thailand&apos;s premier tutor matching community</p>
-      </div>
-      <div className="mb-5 grid grid-cols-2 rounded-lg bg-surface-3 p-1">
-        {(["in", "up"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={cn("rounded-md py-2 text-sm font-medium", tab === t ? "bg-white text-primary shadow-sm" : "text-muted")}>
-            {t === "in" ? "Sign In" : "Sign Up"}
-          </button>
-        ))}
-      </div>
-      <form onSubmit={submit} className="space-y-4">
-        {tab === "up" && (
-          <div className="grid grid-cols-2 gap-2">
-            {(["student", "tutor"] as const).map((r) => (
-              <button type="button" key={r} onClick={() => setRole(r)} className={cn("rounded-lg border px-3 py-2 text-sm font-medium capitalize", role === r ? "border-primary bg-primary-soft text-primary" : "border-border")}>I&apos;m a {r}</button>
-            ))}
+    <div className="grid w-full max-w-[960px] overflow-hidden rounded-3xl border border-border bg-white shadow-[var(--shadow-lift)] lg:grid-cols-[1fr_1.1fr]">
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
+        <div className="bg-notebook pointer-events-none absolute inset-0 opacity-20 invert" />
+        <div className="relative">
+          <span className="grid size-12 place-items-center rounded-2xl bg-white/15"><IconSchool size={26} /></span>
+          <h2 className="mt-6 text-3xl font-extrabold leading-tight tracking-tight">Learn faster with a tutor who gets you.</h2>
+          <ul className="mt-8 space-y-4">
+            {perks.map(({ icon: Icon, text }) => <li key={text} className="flex items-start gap-3"><span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-white/15"><Icon size={18} /></span><span className="opacity-95">{text}</span></li>)}
+          </ul>
+        </div>
+        <p className="relative mt-10 text-sm opacity-80">Join 10,000+ students learning on TewsDay.</p>
+      </aside>
+
+      <div className="p-6 sm:p-10">
+        <div className="mb-6 grid grid-cols-2 rounded-xl bg-surface-3 p-1" role="tablist">
+          {(["in", "up"] as const).map((t) => (
+            <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={cn("min-h-10 cursor-pointer rounded-lg text-sm font-semibold transition-all", tab === t ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-ink")}>
+              {t === "in" ? "Sign in" : "Create account"}
+            </button>
+          ))}
+        </div>
+        <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{tab === "in" ? "Welcome back" : "Let's get you started"}</h1>
+        <p className="mb-6 mt-1 text-muted-foreground">{tab === "in" ? "Sign in to continue learning." : "It takes less than a minute."}</p>
+
+        <form onSubmit={submit} className="space-y-5" key={tab}>
+          {tab === "up" && (
+            <div className="animate-step space-y-5">
+              <div role="radiogroup" aria-label="I am a" className="grid gap-3 sm:grid-cols-2">
+                <ChoiceCard icon={IconBackpack} label="I want to learn" hint="Student or parent" active={role === "student"} onClick={() => setRole("student")} />
+                <ChoiceCard icon={IconSchool} label="I want to teach" hint="Tutor" active={role === "tutor"} onClick={() => setRole("tutor")} />
+              </div>
+              <div className="relative"><IconUser size={18} className="absolute left-3.5 top-3.5 text-muted-foreground" /><input name="name" required aria-label="Full name" placeholder="Your name" autoComplete="name" className="input pl-10" /></div>
+            </div>
+          )}
+          <div className="relative"><IconMail size={18} className="absolute left-3.5 top-3.5 text-muted-foreground" /><input name="email" type="email" required aria-label="Email address" placeholder="Email address" autoComplete="email" className="input pl-10" /></div>
+          <div>
+            <div className="relative">
+              <IconLock size={18} className="absolute left-3.5 top-3.5 text-muted-foreground" />
+              <input type={show ? "text" : "password"} required minLength={tab === "up" ? 8 : 1} value={pw} onChange={(e) => setPw(e.target.value)} aria-label="Password" placeholder="Password" autoComplete={tab === "in" ? "current-password" : "new-password"} className="input px-10" />
+              <button type="button" onClick={() => setShow(!show)} className="absolute right-1.5 top-1 grid size-9 cursor-pointer place-items-center rounded-lg text-muted-foreground hover:bg-surface-2" aria-label={show ? "Hide password" : "Show password"}>{show ? <IconEyeOff size={18} /> : <IconEye size={18} />}</button>
+            </div>
+            {tab === "up" && pw && (
+              <div className="mt-2 flex items-center gap-2" aria-live="polite">
+                <div className="flex flex-1 gap-1">{[1, 2, 3].map((i) => <span key={i} className={cn("h-1.5 flex-1 rounded-full transition-colors", sc >= i ? (sc === 3 ? "bg-success" : "bg-warning") : "bg-surface-3")} />)}</div>
+                <span className="text-xs text-muted-foreground">{["Too short", "Weak", "Good", "Strong"][sc]}</span>
+              </div>
+            )}
+            {tab === "in" && <div className="mt-2 text-right"><Link href="#" className="inline-flex min-h-8 items-center text-xs font-semibold text-primary hover:underline">Forgot password?</Link></div>}
           </div>
-        )}
-        <div><label className="label">Email address</label>
-          <div className="relative"><IconMail size={16} className="absolute left-3 top-3.5 text-muted" />
-            <input name="email" type="email" required placeholder="name@example.com" className="input pl-9" /></div></div>
-        <div><div className="flex justify-between"><label className="label">Password</label><Link href="#" className="text-xs font-medium text-primary">Forgot password?</Link></div>
-          <div className="relative"><IconLock size={16} className="absolute left-3 top-3.5 text-muted" />
-            <input type={show ? "text" : "password"} required minLength={6} placeholder="••••••••" className="input px-9" />
-            <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-3 text-muted" aria-label="Toggle password">{show ? <IconEyeOff size={16} /> : <IconEye size={16} />}</button></div></div>
-        <label className="flex items-center gap-2 text-muted"><input type="checkbox" className="size-4 accent-primary" />Remember me for 30 days</label>
-        <button className="btn-primary w-full py-3">{tab === "in" ? "Sign In to TewsDay" : "Create account"}<IconArrowRight size={16} /></button>
-      </form>
-      <div className="my-5 flex items-center gap-3 text-xs text-muted"><span className="h-px flex-1 bg-border" />Or continue with<span className="h-px flex-1 bg-border" /></div>
-      <div className="grid grid-cols-3 gap-3">
-        {["Google", "Apple", "LINE"].map((p) => <button key={p} onClick={() => toast.info(`${p} sign-in needs the backend (auth_003).`)} className="btn-outline">{p}</button>)}
+          <button disabled={busy} className="btn-primary min-h-12 w-full text-base disabled:opacity-60">{busy ? "Please wait…" : tab === "in" ? "Sign in" : role === "tutor" ? "Apply as tutor" : "Create account"}<IconArrowRight size={18} /></button>
+        </form>
+
+        <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" /></div>
+        <div className="grid grid-cols-3 gap-3">
+          {["Google", "Apple", "LINE"].map((p) => <button key={p} onClick={() => toast.info(`${p} sign-in needs the backend (auth_003).`)} className="btn-outline">{p}</button>)}
+        </div>
+        <p className="flex items-center justify-center gap-1.5 pt-6 text-center text-xs text-muted-foreground"><IconCheck size={14} className="text-success" />By continuing, you agree to our <Link href="#" className="font-semibold text-primary hover:underline">Terms</Link> and <Link href="#" className="font-semibold text-primary hover:underline">Privacy Policy</Link>.</p>
       </div>
-      <div className="mt-5 flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-xs">
-        <span className="flex items-center gap-2 font-medium"><IconSchool size={16} className="text-primary" />Looking to teach in Bangkok?</span>
-        <button onClick={() => { setTab("up"); setRole("tutor"); }} className="font-semibold text-primary">Apply as Tutor ›</button>
-      </div>
-      <p className="pt-4 text-center text-xs text-muted">By continuing, you agree to TewsDay&apos;s <Link href="#" className="text-primary">Terms of Service</Link> and <Link href="#" className="text-primary">Privacy Policy</Link>.</p>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { IconStarFilled } from "@tabler/icons-react";
 import { cn } from "@/lib/cn";
 
-const hues = ["#c25400", "#7c3aed", "#0d9488", "#2563eb", "#be185d", "#4d7c0f"];
+const hues = ["#b45309", "#7c3aed", "#0f766e", "#0369a1", "#be185d", "#4d7c0f"];
 export function Avatar({ name, size = 48, online }: { name: string; size?: number; online?: boolean }) {
   const initials = name.replace(/^(Dr\.|Mr\.|Ms\.)\s*/i, "").split(" ").map((w) => w[0]).slice(0, 2).join("");
   const hue = hues[(name.charCodeAt(0) + name.length) % hues.length];
@@ -28,8 +28,8 @@ export function Stars({ value, size = 14 }: { value: number; size?: number }) {
 
 const tones = {
   green: "bg-success-soft text-success",
-  orange: "bg-primary-soft text-primary-dark border border-primary/20",
-  gray: "bg-border/50 text-muted",
+  orange: "bg-amber-50 text-amber-700 border border-amber-200",
+  gray: "bg-border/50 text-muted-foreground",
   red: "bg-destructive-soft text-destructive",
   amber: "bg-amber-50 text-amber-700",
   blue: "bg-blue-50 text-blue-700",
@@ -52,10 +52,10 @@ export function Progress({ value, className }: { value: number; className?: stri
 
 export function PageTitle({ title, sub, action }: { title: string; sub?: string; action?: React.ReactNode }) {
   return (
-    <div className="mb-6 flex items-end justify-between gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {sub && <p className="mt-1 text-muted">{sub}</p>}
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="border-l-4 border-primary pl-4">
+        <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{title}</h1>
+        {sub && <p className="mt-1 text-muted-foreground">{sub}</p>}
       </div>
       {action}
     </div>

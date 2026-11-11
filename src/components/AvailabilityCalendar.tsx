@@ -16,7 +16,7 @@ export function AvailabilityCalendar() {
   return (
     <section className="card p-6">
       <h2 className="font-semibold">Weekly Availability Calendar</h2>
-      <p className="mb-4 text-xs text-muted">Click an available time slot to start your reservation. (GMT+7 Bangkok)</p>
+      <p className="mb-4 text-xs text-muted-foreground">Click an available time slot to start your reservation. (GMT+7 Bangkok)</p>
       <div className="grid grid-cols-7 gap-2">
         {days.map((day, i) => (
           <div key={day} className="space-y-2 text-center">
@@ -29,7 +29,7 @@ export function AvailabilityCalendar() {
           </div>))}
       </div>
       <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-xs">
-        <span className="text-muted">Selected: <b className="text-primary">{sel ? `${days[+d]} · ${t}` : "—"}</b></span>
+        <span className="text-muted-foreground">Selected: <b className="text-primary">{sel ? `${days[+d]} · ${t}` : "—"}</b></span>
         <button disabled={!sel} onClick={() => toast.success("Slot reserved. Continue to confirm your booking.")} className="btn-primary px-5 py-1.5">Continue</button>
       </div>
     </section>

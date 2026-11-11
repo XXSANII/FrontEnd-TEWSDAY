@@ -1,13 +1,26 @@
+import { IconGift, IconBolt, IconShieldCheck } from "@tabler/icons-react";
 import { RequestForm } from "@/components/RequestForm";
-const perks = [["Free Service", "No matching fee charged"], ["Avg. 4 Proposals", "Within first 2 hours"], ["Verified Credentials", "Identity & degree checked"]];
+
+const perks = [
+  { icon: IconGift, h: "Free to use", p: "No matching fee" },
+  { icon: IconBolt, h: "Fast replies", p: "Avg. 4 offers in 2 hours" },
+  { icon: IconShieldCheck, h: "Verified tutors", p: "Identity and degrees checked" },
+];
+
 export default function RequestPage() {
   return (
-    <main className="container-page py-8">
-      <p className="pb-3 text-xs text-muted">Home › Request Tutor</p>
-      <h1 className="text-[32px] font-bold tracking-tight">Request a Tutor</h1>
-      <p className="max-w-xl pb-6 text-muted">Tell us your learning goals and preferences. Our academic advisors match you with top-tier vetted tutors within 24 hours.</p>
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">{perks.map(([h, p]) => <div key={h} className="card flex items-center gap-3 p-4"><span className="size-8 rounded-full bg-primary-soft" /><div><b className="block text-xs">{h}</b><span className="text-xs text-muted">{p}</span></div></div>)}</div>
-      <RequestForm />
+    <main className="relative overflow-hidden bg-gradient-to-b from-primary-soft/60 to-white">
+      <div className="bg-notebook pointer-events-none absolute inset-0 opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_40%)]" />
+      <div className="container-page relative py-10 sm:py-14">
+        <div className="mx-auto mb-8 max-w-2xl text-center">
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Tell us what you need. <span className="highlight">We&apos;ll find your tutor.</span></h1>
+          <p className="mt-3 text-muted-foreground">Answer a few quick questions. It takes about a minute.</p>
+          <ul className="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+            {perks.map(({ icon: Icon, h, p }) => <li key={h} className="flex items-center gap-2"><Icon size={18} className="text-primary" /><span><b>{h}</b> <span className="text-muted-foreground">· {p}</span></span></li>)}
+          </ul>
+        </div>
+        <RequestForm />
+      </div>
     </main>
   );
 }
